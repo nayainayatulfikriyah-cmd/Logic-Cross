@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<!-- Viewport responsif + viewport-fit=cover agar konten tidak tertutup notch/status bar HP -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LOGIC CROSS — TTS Online</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= HEADER (selalu terlihat di atas / sticky) ================= -->
+<header>
+  <div class="wrap top">
+    <!-- Nama aplikasi -->
+    <div class="brand">🧠 LOGIC CROSS</div>
+    <!-- Info status pemain: nama, skor total, dan waktu bermain -->
+    <div class="stats">
+      <span class="pill">👤 <b id="who">Tamu</b></span>
+      <span class="pill">⭐ <b id="score">0</b></span>
+      <span class="pill">⏱️ <b id="timer">00:00</b></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ================= LAYAR BERANDA (home) ================= -->
+  <!-- class "screen active" = layar yang sedang ditampilkan; script.js akan
+       menukar layar dengan menambah/menghapus class "active" -->
+  <section id="home" class="screen active">
+
+    <!-- Kartu sambutan / hero: judul, deskripsi, form input nama pemain -->
+    <div class="card hero">
+      <div class="big">🧩🐠🍎✨</div>
+      <h1>LOGIC CROSS</h1>
+      <!-- Input nama pemain, maksimal 16 karakter -->
+      <input id="nameIn" class="name" maxlength="16" placeholder="Nama pemain" autocomplete="off">
+      <!-- Tombol mulai, memanggil fungsi start() di script.js -->
+      <button onclick="start()">▶ Start Playing</button>
+      <div style="margin-top:10px"><button class="secondary" onclick="openScore()">🏆 View Score</button> <button class="secondary" onclick="restartAll()">🔄 Restart</button></div>
+      <!-- Keterangan mode (online/offline) diisi otomatis oleh script.js -->
+      <p class="note" id="mode"></p>
+    </div>
+
+    <!-- Daftar 4 level permainan. Tiap level punya 4 halaman TTS. -->
+    <!-- onclick="enter(n)" -> n adalah nomor halaman pertama level tsb -->
+    <div class="levels">
+      <div class="level l1" onclick="enter(1)">
+        <small id="lp1">4 halaman</small><b>🟢 Level 1</b>Dasar & mudah
+      </div>
+      <div class="level l2" onclick="enter(5)">
+        <small id="lp2">4 halaman</small><b>🔵 Level 2</b>Mulai menantang
+      </div>
+      <div class="level l3" onclick="enter(9)">
+        <small id="lp3">4 halaman</small><b>🟠 Level 3</b>Lebih menantang
+      </div>
+      <div class="level l4" onclick="enter(13)">
+        <small id="lp4">4 halaman</small><b>🟣 Level 4</b>Campuran
+      </div>
+    </div>
+
+    <!-- Panduan cara bermain, berisi 6 langkah statis (tidak diubah JS) -->
+    <details class="card how">
+      <summary>📚 How to Play</summary>
+      <div class="steps">
+        <div class="step s1"><span class="n">1</span><div class="ic">✍️</div><b>Tulis Namamu</b><p>Isi nama pemain, lalu tekan Start Playing.</p></div>
+        <div class="step s2"><span class="n">2</span><div class="ic">🖼️</div><b>Lihat Gambar</b><p>Cari gambar bernomor. Panah ➡ berarti mendatar, ⬇ berarti menurun.</p></div>
+        <div class="step s3"><span class="n">3</span><div class="ic">🔤</div><b>Isi Kotaknya</b><p>Ketik nama gambar, satu huruf tiap kotak, di nomor yang sama.</p></div>
+        <div class="step s4"><span class="n">4</span><div class="ic">✅</div><b>Check</b><p>Tekan Check. Hanya bisa sekali: tiap huruf salah −2 poin dan halaman terkunci! Mau ulang semuanya? Tekan Restart.</p></div>
+        <div class="step s5"><span class="n">5</span><div class="ic">💡</div><b>Butuh Bantuan?</b><p>Tombol Hint membuka 1 huruf, tetapi poinnya berkurang 2.</p></div>
+        <div class="step s6"><span class="n">6</span><div class="ic">🏆</div><b>Jadi Juara</b><p>Selesaikan 4 halaman sebelum waktu level habis. Skor muncul setiap level selesai, plus bonus sisa waktu!</p></div>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- ================= LAYAR PERMAINAN (game) ================= -->
+  <!-- Layar ini disembunyikan (belum ada class "active") sampai pemain
+       menekan salah satu level; ditampilkan lewat fungsi show()/go() di JS -->
+  <section id="game" class="screen">
+
+    <!-- Bar atas layar game: tombol kembali ke beranda + indikator titik halaman -->
+    <div class="pagebar">
+      <button class="secondary" onclick="home()">⌂ Home</button>
+      <!-- id="dots" diisi otomatis oleh JS: 4 tombol bulat menandakan
+           halaman 1-4 pada level yang sedang dimainkan -->
+      <div class="dots" id="dots"></div>
+    </div>
+
+    <!-- "sheet" = lembar kertas TTS bergaya buku aktivitas anak -->
+    <div class="sheet" id="sheet">
+      <!-- Elemen hiasan (emoji melayang di pojok-pojok), diisi oleh JS -->
+      <div class="decor" id="decor"></div>
+
+      <!-- Judul tema TTS halaman ini, contoh: "Buah-buahan 🍎" -->
+      <div class="ribbon"><span id="title"></span></div>
+
+      <!-- Nama pemain & info level/halaman saat ini -->
+      <div class="namebox">
+        <span>Nama : <b id="pname"></b></span>
+        <span id="levelLabel"></span>
+      </div>
+
+      <div class="paper">
+        <p class="lead">Yuk selesaikan teka teki silang ini! Cocokkan nomor gambar dengan kotak.</p>
+
+        <!-- Tata letak 3 kolom: petunjuk kiri - grid TTS - petunjuk kanan -->
+        <div class="layout">
+          <!-- Kolom petunjuk gambar bagian kiri (diisi JS) -->
+          <div class="clues" id="cluesL"></div>
+          <!-- Kotak-kotak teka-teki silang, dibuat dinamis oleh render() di JS -->
+          <div class="gridbox"><div id="cross" class="cross"></div></div>
+          <!-- Kolom petunjuk gambar bagian kanan (diisi JS) -->
+          <div class="clues" id="cluesR"></div>
+        </div>
+
+        <!-- Pesan umpan balik: benar/salah/selesai -->
+        <div id="feedback" class="feedback"></div>
+      </div>
+    </div>
+    <!-- akhir .sheet -->
+
+    <!-- Tombol aksi permainan -->
+    <div class="actions">
+      <button class="secondary" id="prevBtn" onclick="pv()">← Previous</button>
+      <button onclick="check()">✓ Check</button>
+      <button class="gold" onclick="hint()">💡 Hint</button>
+      <button class="secondary" onclick="reset()">↻ Reset</button>
+      <button class="secondary" onclick="restartAll()">🔄 Restart</button>
+      <button id="nextBtn" onclick="nx()">Next →</button>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- Footer identitas pembuat aplikasi -->
+<footer class="foot">🎓 XI RPL SMKN 2 Bangkalan 2026</footer>
+
+<!-- Notifikasi kecil (toast) di bagian bawah layar, dikendalikan fungsi toast() -->
+<div id="toast" class="toast"></div>
+
+<!-- Logika permainan (generator TTS, render, skor, dsb) -->
+<div class="end" id="end"><div class="card endbox">
+  <div class="eico" id="eIco"></div><h2 id="eTitle"></h2><p id="eMsg"></p>
+  <table><thead><tr><th>#</th><th>Pemain</th><th>Skor</th><th>Level</th></tr></thead><tbody id="board2"></tbody></table>
+  <div class="eacts"><button class="secondary" onclick="endHome()">⌂ Home</button><button class="secondary" onclick="restartAll()">🔄 Main dari Awal</button><button id="eNext" onclick="endNext()">Next Level ▶</button></div>
+</div></div>
+<div class="end" id="sc"><div class="card endbox scbox">
+  <div class="schead"><div class="eico">🏆</div><h2>Riwayat Skor</h2>
+   <div class="sctot"><b id="scTot">0</b><small id="scName"></small></div>
+   <div class="scprog"><i id="scBar"></i></div></div>
+  <div class="sclv" id="scLv"></div>
+  <h3>🕘 Riwayat</h3><div class="schist" id="scHist"></div>
+  <h3>🏅 Peringkat</h3><div class="scrank"><table><thead><tr><th>#</th><th>Pemain</th><th>Skor</th><th>Level</th></tr></thead>
+   <tbody id="board"><tr><td colspan="4" class="note">Memuat…</td></tr></tbody></table></div>
+  <div class="eacts"><button class="secondary" onclick="restartAll()">🔄 Restart</button><button onclick="closeScore()">Close</button></div>
+</div></div>
+<script src="script.js"></script>
+</body>
+</html>
